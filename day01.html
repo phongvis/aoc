@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset='utf-8'>
+        <title>Advent of Code 2016 - Day 1</title>
+    </head>
+    <body>
+        <style>
+            html, body, svg {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                display: block;
+                font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif;
+                font-size: 14px;
+            }
+            .line {
+                fill: none;
+                stroke: black;
+                stroke-width: 1px;
+            }
+            .input {
+                position: fixed;
+                left: 5px;
+                top: 5px;
+            }
+        </style>
+
+        <svg></svg>
+        <div class="input">
+            <div style="margin-bottom:3px">Try your own input by uploading the data file.</div>
+
+            <input type="file" id='file'>
+            <input type="submit" id='submit' value='Run'>
+        </div>
+
+        <script src='https://d3js.org/d3.v4.min.js'></script>
+        <script src='https://cdn.jsdelivr.net/lodash/4.17.2/lodash.min.js'></script>
+    </body>
+
+    <script type='text/javascript'>
+        // Update data with content from file
+        d3.select('#file').node().addEventListener('change', function(e) {
+            var fileReader = new FileReader();
+            fileReader.onload = function(f) {
+                data = f.target.result.trim();
+            };
+
+            fileReader.readAsText(e.target.files[0]);
+        });
+
+        d3.select('#submit').on('click', function() {
+            clearTimeout(timeoutId);
+            d3.select('svg').remove();
+            d3.select('body').append('svg');
+            solve(data);
+            draw(points);
+        });
+
+        let data = 'L5, R1, R3, L4, R3, R1, L3, L2, R3, L5, L1, L2, R5, L1, R5, R1, L4, R1, R3, L4, L1, R2, R5, R3, R1, R1, L1, R1, L1, L2, L1, R2, L5, L188, L4, R1, R4, L3, R47, R1, L1, R77, R5, L2, R1, L2, R4, L5, L1, R3, R187, L4, L3, L3, R2, L3, L5, L4, L4, R1, R5, L4, L3, L3, L3, L2, L5, R1, L2, R5, L3, L4, R4, L5, R3, R4, L2, L1, L4, R1, L3, R1, R3, L2, R1, R4, R5, L3, R5, R3, L3, R4, L2, L5, L1, L1, R3, R1, L4, R3, R3, L2, R5, R4, R1, R3, L4, R3, R3, L2, L4, L5, R1, L4, L5, R4, L2, L1, L3, L3, L5, R3, L4, L3, R5, R4, R2, L4, R2, R3, L3, R4, L1, L3, R2, R1, R5, L4, L5, L5, R4, L5, L2, L4, R4, R4, R1, L3, L2, L4, R3';
+
+        let points;
+        let hq;
+        let timeoutId;
+
+        solve(data);
+        draw(points);
+
+        function solve(data) {
+            points = [ { x: 0, y: 0 } ];
+            
+            let x = 0,
+                y = 0,
+                face = 'N',
+                visitLookup = { '0,0': true };
+
+            data.split(',').forEach(d => {
+                d = d.trim();
+                go(d.substr(0, 1), +d.substr(1));
+            });
+
+            // Output answer ex1
+            console.log(x, y, Math.abs(x) + Math.abs(y));
+
+            function checkVisit(dx, dy) {
+                for (let i = 1; i <= Math.abs(dx + dy); i++) {
+                    const sign = dx + dy < 0 ? -1 : 1;
+                    let newX = x, newY = y;
+                    if (dx) {
+                        newX = sign * i + x;
+                    } else {
+                        newY = sign * i + y;
+                    }
+
+                    const k = newX + ',' + newY;
+                    points.push({ x: newX, y: newY });
+
+                    if (visitLookup[k]) {
+                        if (!hq) {
+                            hq = { x: newX, y: newY };
+                            console.log('visited', k);
+                        }
+                    } else {
+                        // console.log('go to', k);
+                        visitLookup[k] = true;
+                    }
+                }
+            }
+
+            // Updates x, y, face
+            function go(dir, step) {
+                if (face === 'N') {
+                    if (dir === 'R') {
+                        checkVisit(step, 0);
+                        x += step;
+                        face = 'E';
+                    } else {
+                        checkVisit(-step, 0);
+                        x -= step;
+                        face = 'W';
+                    }
+                } else if (face === 'E') {
+                    if (dir === 'R') {
+                        checkVisit(0, step);
+                        y += step;
+                        face = 'S';
+                    } else {
+                        checkVisit(0, -step);
+                        y -= step;
+                        face = 'N';
+                    }
+                } else if (face === 'S') {
+                    if (dir === 'R') {
+                        checkVisit(-step, 0);
+                        x -= step;
+                        face = 'W';
+                    } else {
+                        checkVisit(step, 0);
+                        x += step;
+                        face = 'E';
+                    }
+                } else {
+                    if (dir === 'R') {
+                        checkVisit(0, -step);
+                        y -= step;
+                        face = 'N';
+                    } else {
+                        checkVisit(0, step);
+                        y += step;
+                        face = 'S';
+                    }
+                }
+            }
+        }
+
+        function draw(data) {
+            // Place the path in the middle of the screen
+            const svg = d3.select('svg'),
+                svgWidth = svg.node().getBoundingClientRect().width,
+                svgHeight = svg.node().getBoundingClientRect().height;
+
+            const originWidth = d3.max(data, d => d.x) - d3.min(data, d => d.x),
+                originHeight = d3.max(data, d => d.y) - d3.min(data, d => d.y),
+                ratio = Math.floor(Math.min(svgWidth / originWidth, svgHeight / originHeight));
+
+            // 1 block = ratio px
+            data.forEach(d => {
+                d.x *= ratio;
+                d.y *= ratio;
+            });
+
+            const pathWidth = d3.max(data, d => d.x) - d3.min(data, d => d.x),
+                pathHeight = d3.max(data, d => d.y) - d3.min(data, d => d.y),
+                oldMaxX = d3.max(data, d => d.x),
+                newMaxX = Math.floor((svgWidth + pathWidth) / 2),
+                dx = newMaxX - oldMaxX,
+                oldMaxY = d3.max(data, d => d.y),
+                newMaxY = Math.floor((svgHeight + pathHeight) / 2),
+                dy = newMaxY - oldMaxY;
+
+            hq = { x: hq.x * ratio, y: hq.y * ratio };
+
+            // Draw
+            const line = d3.line()
+                .x(d => d.x + dx)
+                .y(d => d.y + dy);
+            const path = svg.append('path')
+                .attr('class', 'line');
+            const label = svg.append('text')
+                .attr('transform', 'translate(10, ' + (svgHeight - 10) + ')');
+            const hqPoint = svg.append('g')
+                .attr('transform', 'translate(' + (hq.x + dx) + ',' + (hq.y + dy) +')')
+                .style('display', 'none');
+            hqPoint.append('circle')
+                .style('fill', 'red')
+                .attr('r', 3)
+            hqPoint.append('text')
+                .text('Easter Bunny HQ (' + hq.x / ratio + ', ' + hq.y / ratio + ')')
+                .style('text-anchor', 'middle')
+                .style('fill', 'blue')
+                .attr('y', 15);
+
+            let idx = 1,
+                hqIdx;
+
+            let count = 0;
+            for (let i = 0; i < data.length; i++) {
+                if (data[i].x === hq.x && data[i].y === hq.y) count++;
+                if (count === 2) {
+                    hqIdx = i;
+                    break;
+                }
+            }
+
+            function animate() {
+                if (idx >= data.length) return;
+
+                idx++;
+                path.datum(data.slice(0, idx))
+                    .attr('d', line);
+
+                label.text('Block: ' + data[idx - 1].x / ratio + ', ' + data[idx - 1].y / ratio);
+
+                if (idx - 1 === hqIdx) {
+                    hqPoint.style('display', 'block');
+                }
+
+                timeoutId = setTimeout(animate, 20);
+            }
+
+            animate();
+        }
+    </script>
+</html>
