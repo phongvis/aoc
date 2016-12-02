@@ -21,7 +21,7 @@
             }
             .input {
                 position: fixed;
-                left: 5px;
+                right: 5px;
                 top: 5px;
             }
         </style>
@@ -50,7 +50,7 @@
         });
 
         d3.select('#submit').on('click', function() {
-            clearTimeout(timeoutId);
+            timer.stop();
             d3.select('svg').remove();
             d3.select('body').append('svg');
             solve(data);
@@ -61,7 +61,7 @@
 
         let points;
         let hq;
-        let timeoutId;
+        let timer;
 
         solve(data);
         draw(points);
@@ -213,9 +213,7 @@
                 }
             }
 
-            function animate() {
-                if (idx >= data.length) return;
-
+            timer = d3.interval(function() {
                 idx++;
                 path.datum(data.slice(0, idx))
                     .attr('d', line);
@@ -226,10 +224,8 @@
                     hqPoint.style('display', 'block');
                 }
 
-                timeoutId = setTimeout(animate, 20);
-            }
-
-            animate();
+                if (idx == data.length) timer.stop();
+            }, 20);
         }
     </script>
 </html>
