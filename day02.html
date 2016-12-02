@@ -52,14 +52,14 @@
             };
 
             fileReader.readAsText(e.target.files[0]);
+            timer.stop();
         });
 
         d3.select('#submit').on('click', function() {
             timer.stop();
-            d3.select('svg').remove();
-            d3.select('body').append('svg');
-            solve(data);
-            draw(points);
+            init();
+            solve1(data);
+            draw();
         });
 
         // Variables
@@ -81,15 +81,27 @@ DURLRRRDRULDLULUDULUURURRLULUDLURURDDURULLRRUUDLRURLDLRUDULDLLRRULLLLRRLRUULDLDL
                 D: d => [ 5, 9, 10, 12, 13 ].includes(d) ? d : d % 10 === 1 ? d + 2 : d + 4,
                 L: d => [ 1, 2, 5, 10, 13 ].includes(d) ? d : d - 1,
                 R: d => [ 1, 4, 9, 12, 13 ].includes(d) ? d : d + 1
-            }, buttons = [ 5 ];
+            },
+            buttons;
 
-        const svg = d3.select('svg');
+        let svg;
         let timer;
-        let idx = 1;
+        let idx;
 
+        init();
         solve1(data);
         // solve2(data);
         draw();
+
+        function init() {
+            currentButton = 5;
+            buttons = [ currentButton ];
+            idx = 1;
+
+            d3.select('svg').remove();
+            d3.select('body').append('svg');
+            svg = d3.select('svg')
+        }
 
         // Main solving function
         function solve1(data) {
@@ -118,7 +130,6 @@ DURLRRRDRULDLULUDULUURURRLULUDLURURDDURULLRRUUDLRURLDLRUDULDLLRRULLLLRRLRUULDLDL
         }
 
         // Main drawing function
-
         function draw() {
             const labels = [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7, 8, 9 ] ];
 
@@ -157,7 +168,7 @@ DURLRRRDRULDLULUDULUURURRLULUDLURURDDURULLRRUUDLRURLDLRUDULDLLRRULLLLRRLRUULDLDL
                 idx++;
 
                 if (idx == buttons.length) timer.stop();
-            }, 10);
+            });
         }
     </script>
 </html>
