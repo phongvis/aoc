@@ -149,6 +149,21 @@ DURLRRRDRULDLULUDULUURURRLULUDLURURDDURULLRRUUDLRURLDLRUDULDLLRRULLLLRRLRUULDLDL
                         .attr('x', d => d.x)
                         .attr('y', d => d.y);
 
+            // Path
+            const points = [];
+            for (let i = 0; i < buttons.length; i++) {
+                if (!buttons[i + 1]) break;
+
+                const p1 = getCoord(buttons[i]);
+                const p2 = getCoord(buttons[i + 1]);
+                points.push([ p1[0], p1[1], p2[0], p2[1] ]);
+            }
+
+            points.forEach(p => console.log(p))
+
+            const path = svg.append('g').attr('class', 'path')
+                .attr('transform', 'translate(10, 10)');
+
             // Code
             const label = svg.append('text')
                 .attr('transform', 'translate(350, 30)')
@@ -165,10 +180,35 @@ DURLRRRDRULDLULUDULUURURRLULUDLURURDDURULLRRUUDLRURLDLRUDULDLLRRULLLLRRLRUULDLDL
                     label.text(label.text() + buttons[idx - 1]);
                 }
 
+                path.selectAll('.line').data(points.slice(0, idx))
+                    .enter().append('line')
+                        .attr('class', 'line')
+                        .attr('x1', d => d[0])
+                        .attr('y1', d => d[1])
+                        .attr('x2', d => d[0])
+                        .attr('y2', d => d[1])
+                        .transition()
+                        .attr('x1', d => d[0])
+                        .attr('y1', d => d[1])
+                        .attr('x2', d => d[2])
+                        .attr('y2', d => d[3]);
+
+                // Not work quite well. Need to animate line
+                path.selectAll('.line').each(function(d, i) {
+                    const opacity = i < idx - 10 ? 0 : 1 - (idx - i) / 10;
+                    d3.select(this).style('opacity', opacity);
+                });
+
                 idx++;
 
                 if (idx == buttons.length) timer.stop();
-            });
+            }, 250);
+        }
+
+        function getCoord(d) {
+            const x = Math.floor((d - 1) / 3) * 100 + 15;
+            const y = ((d - 1) % 3) * 100 + 40;
+            return [ x, y ];
         }
     </script>
 </html>

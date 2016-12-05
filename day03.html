@@ -2114,12 +2114,12 @@
 
                 idx++;
 
-                if (idx == 101) timer.stop();
-            }, 100);
+                if (idx == triangles.length + 1) timer.stop();
+            });
         }
 
         function triangle(points, i) {
-            points = points.map(p => +p / 10).sort(d3.ascending);
+            points = points.map(p => +p / 25).sort(d3.ascending);
 
             const d1 = points[0],
                 d2 = points[1],
@@ -2137,15 +2137,16 @@
         }
 
         function translate(points, i) {
-            // Layout triangles in a grid 100px x 100px
-            const width = svg.node().getBoundingClientRect().width - 10,
+            // Layout triangles in a grid
+            const gridSize = 40,
+                width = svg.node().getBoundingClientRect().width - 10,
                 height = svg.node().getBoundingClientRect().height - 10,
-                maxWidthTriangle = 100 * Math.sqrt(3) / 2;
+                maxWidthTriangle = gridSize * Math.sqrt(3) / 2;
                 numTrianglesPerRow = Math.floor(width / maxWidthTriangle),
                 ix = i % numTrianglesPerRow,
                 iy = Math.floor(i / numTrianglesPerRow),
                 offsetX = ix * maxWidthTriangle,
-                offsetY = iy * 100;
+                offsetY = iy * gridSize;
 
             return 'translate(' + offsetX + ',' + offsetY + ')';
         }
