@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset='utf-8'>
+        <title>Advent of Code 2016 - Day 8</title>
+    </head>
+    <body>
+        <style>
+            html, body, svg {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                display: block;
+                font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif;
+                font-size: 14px;
+            }
+            .line {
+                fill: none;
+                stroke: black;
+                stroke-width: 1px;
+            }
+            .input {
+                position: fixed;
+                right: 5px;
+                top: 5px;
+            }
+        </style>
+
+        <svg></svg>
+        <div class="input">
+            <div style="margin-bottom:3px">Try your own input by uploading the data file.</div>
+
+            <input type="file" id='file'>
+            <input type="submit" id='submit' value='Run'>
+        </div>
+
+        <script src='https://d3js.org/d3.v4.min.js'></script>
+        <script src='https://cdn.jsdelivr.net/lodash/4.17.2/lodash.min.js'></script>
+    </body>
+
+    <script type='text/javascript'>
+        // Update data with content from file
+        d3.select('#file').node().addEventListener('change', function(e) {
+            var fileReader = new FileReader();
+            fileReader.onload = function(f) {
+                data = f.target.result.trim();
+            };
+
+            fileReader.readAsText(e.target.files[0]);
+            timer.stop();
+        });
+
+        d3.select('#submit').on('click', function() {
+            timer.stop();
+            main();
+        });
+
+        let data;
+        let svg, svgWidth, svgHeight;
+        let timer;
+        let idx;
+        let tables;
+
+        // Read data input
+        d3.request('day08.txt')
+            .mimeType("text/plain")
+            .response(xhr => xhr.responseText)
+            .get(function(content) {
+                data = content;
+                main();
+            });
+
+        function main() {
+            init();
+            solve1();
+            // solve2();
+            draw();
+        }
+
+        function solve1() {
+            const table = _.range(0, 6).map(i => _.range(0, 50).map(j => false));
+
+            data.split('\n').map(row => {
+                if (row.startsWith('rect')) {
+                    const by = row.slice(row.indexOf(' ') + 1).split('x');
+                    rect(table, +by[0], +by[1]);
+                }
+                if (row.startsWith('rotate row')) {
+                    const by = row.slice(row.indexOf('=') + 1).split('by');
+                    rotRow(table, +by[0].trim(), +by[1].trim());
+                }
+                if (row.startsWith('rotate col')) {
+                    const by = row.slice(row.indexOf('=') + 1).split('by');
+                    rotCol(table, +by[0].trim(), +by[1].trim());
+                }
+
+                tables.push(_.cloneDeep(table));
+            });
+
+            console.log(_.sum(table.map(r => r.filter(c => c).length)));
+
+            table.forEach(row => {
+                console.log(row.map(c => c ? '*' : ' ').join(''));
+            });
+        }
+
+        function rect(table, w, h) {
+            _.range(0, h).forEach(i => {
+                _.range(0, w).forEach(j => {
+                    table[i][j] = true;
+                });
+            });
+        }
+
+        function rotRow(table, i, step) {
+            _.times(step, function() {
+                table[i].unshift(table[i].pop());
+            });
+        }
+
+        function rotCol(table, j, step) {
+            _.times(step, function() {
+                const temp = _.range(0, table.length).map(i => table[i][j]);
+                temp.unshift(temp.pop());
+                _.range(0, table.length).forEach(i => {
+                    table[i][j] = temp[i];
+                });
+            });
+        }
+
+        function solve2() {
+        }
+
+        function init() {
+            idx = 1;
+            tables = [];
+
+            d3.select('svg').remove();
+            d3.select('body').append('svg');
+            svg = d3.select('svg');
+            svgWidth = svg.node().getBoundingClientRect().width,
+            svgHeight = svg.node().getBoundingClientRect().height;
+        }
+
+        function draw() {
+            const tableData = _.range(0, 6).map(i => _.range(0, 50).map(j => ({ value: false, x: j * 20, y: i * 20, label: i + '-'+ j })));
+
+            // Keypad
+            svg.append('g')
+                .attr('transform', 'translate(10, 10)')
+                .selectAll('g').data(tableData)
+                .enter().append('g')
+                    .attr('class', 'row')
+                    .selectAll('rect').data(Object)
+                    .enter().append('rect')
+                        .attr('id', d => d.label)
+                        .attr('class', 'key')
+                        .attr('x', d => d.x)
+                        .attr('y', d => d.y)
+                        .attr('width', 20)
+                        .attr('height', 20);
+
+        	// Animate
+            timer = d3.interval(function() {
+                // Update table data
+                _.range(0, 6).forEach(i => _.range(0, 50).forEach(j => {
+                    tableData[i][j].value = tables[idx][i][j];
+                }));
+
+                svg.selectAll('g.row').data(tableData)
+                    .selectAll('rect').data(Object)
+                    .each(function(d) {
+                        d3.select(this).style('fill', d.value ? 'yellow' : 'black');
+                    });
+
+                idx++;
+
+                if (idx === tables.length) timer.stop();
+            }, 100);
+        }
+    </script>
+</html>
