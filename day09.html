@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset='utf-8'>
+        <title>Advent of Code 2016 - Day 9</title>
+    </head>
+    <body>
+        <style>
+            html, body, svg {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                display: block;
+                font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif;
+                font-size: 14px;
+            }
+            .line {
+                fill: none;
+                stroke: black;
+                stroke-width: 1px;
+            }
+            .input {
+                position: fixed;
+                right: 5px;
+                top: 5px;
+            }
+            svg text {
+                text-anchor: start;
+                dominant-baseline: text-before-edge;
+                font-family: courier, monospace;
+                font-size: 30px;
+            }
+        </style>
+
+        <svg></svg>
+        <div class="input">
+            <div style="margin-bottom:3px">Try your own input by uploading the data file.</div>
+
+            <input type="file" id='file'>
+            <input type="submit" id='submit' value='Run'>
+        </div>
+
+        <script src='https://d3js.org/d3.v4.min.js'></script>
+        <script src='https://cdn.jsdelivr.net/lodash/4.17.2/lodash.min.js'></script>
+    </body>
+
+    <script type='text/javascript'>
+        // Update data with content from file
+        d3.select('#file').node().addEventListener('change', function(e) {
+            var fileReader = new FileReader();
+            fileReader.onload = function(f) {
+                data = f.target.result.trim();
+            };
+
+            fileReader.readAsText(e.target.files[0]);
+            timer.stop();
+        });
+
+        d3.select('#submit').on('click', function() {
+            timer.stop();
+            main();
+        });
+
+        let data;
+        let svg, svgWidth, svgHeight;
+        let timer;
+        let idx;
+
+        // Read data input
+        d3.request('day09.txt')
+            .mimeType("text/plain")
+            .response(xhr => xhr.responseText)
+            .get(function(content) {
+                data = content;
+                main();
+            });
+
+        function main() {
+            init();
+            // solve1();
+            // solve2();
+            draw();
+        }
+
+        function solve1() {
+            let dataLeft = data,
+                currentData = '';
+            while (dataLeft.indexOf('(') !== -1) {
+                const leftIdx = dataLeft.indexOf('('),
+                    rightIdx = dataLeft.indexOf(')'),
+                    inside = dataLeft.slice(leftIdx + 1, rightIdx),
+                    numChars = +inside.split('x')[0],
+                    times = +inside.split('x')[1],
+                    newString = _.range(0, times).map(i => dataLeft.slice(rightIdx + 1, rightIdx + 1 + numChars)).join('');
+
+                currentData = currentData + dataLeft.slice(0, leftIdx) + newString;
+                dataLeft = dataLeft.slice(rightIdx + 1 + numChars);
+            }
+
+            currentData = currentData + dataLeft;
+
+            console.log(currentData.length, currentData);
+        }
+
+        function solve2() {
+            console.log(count(data));
+        }
+
+        function count(s) {
+            const leftIdx = s.indexOf('('),
+                rightIdx = s.indexOf(')');
+
+            if (leftIdx === -1 || rightIdx === -1) return s.length;
+
+
+            const inside = s.slice(leftIdx + 1, rightIdx),
+                numChars = +inside.split('x')[0],
+                times = +inside.split('x')[1],
+                affectString = s.slice(rightIdx + 1, rightIdx + 1 + numChars),
+                leftString = s.slice(rightIdx + 1 + numChars);
+
+            return leftIdx + count(affectString) * times + count(leftString);
+        }
+
+        function init() {
+            idx = 0;
+
+            d3.select('svg').remove();
+            d3.select('body').append('svg');
+            svg = d3.select('svg');
+            svgWidth = svg.node().getBoundingClientRect().width,
+            svgHeight = svg.node().getBoundingClientRect().height;
+        }
+
+        function draw() {
+            // data = 'A(2x2)BCD(2x2)EFG';
+            let steps = [];
+
+            // Compute
+            let dataLeft = data,
+                currentDataLength = 0;
+            while (dataLeft.indexOf('(') !== -1) {
+                const leftIdx = dataLeft.indexOf('('),
+                    rightIdx = dataLeft.indexOf(')'),
+                    inside = dataLeft.slice(leftIdx + 1, rightIdx),
+                    numChars = +inside.split('x')[0],
+                    times = +inside.split('x')[1];
+
+                currentDataLength += leftIdx + numChars * times;
+
+                steps.push({
+                    type: 'move',
+                    text: dataLeft,
+                    index: leftIdx
+                });
+
+                steps.push({
+                    type: 'dup',
+                    text: dataLeft.slice(rightIdx + 1),
+                    numChars: numChars,
+                    times: times
+                });
+
+                dataLeft = dataLeft.slice(rightIdx + 1 + numChars);
+            }
+
+            currentDataLength += dataLeft.length;
+            steps.push({
+                type: 'move',
+                text: dataLeft,
+                index: dataLeft.length
+            });
+
+        	// Animate
+            const point = svg.append('g').attr('transform', 'translate(10, 40)').append('text').text(0);
+            const op = svg.append('g').attr('transform', 'translate(150, 40)').append('text');
+            const g = svg.append('g').attr('transform', 'translate(10, 100)').append('text').text(data);
+
+            timer = d3.interval(function() {
+                g.text('');
+                g.selectAll('tspan').remove();
+
+                const step = steps[idx];
+
+                if (step.type === 'move') {
+                    // Left part
+                    g.append('tspan').text(step.text.slice(0, step.index))
+                        .style('fill', 'blue')
+                        .transition().duration(1000)
+                        .style('opacity', 0)
+                        .on('start', function() {
+                            op.selectAll('tspan').remove();
+                            if (step.index !== 0) {
+                                op.append('tspan').text('+');
+                                op.append('tspan').text(step.index).style('fill', 'blue');
+                            }
+                        }).on('end', function() {
+                            d3.select(this).remove();
+                            point.text(+point.text() + step.index);
+                        });
+                    // Rest
+                    g.append('tspan').text(step.text.slice(step.index));
+                } else {
+                    // (
+                    g.append('tspan').text('(').attr('class', 'left');
+                    // numChars
+                    g.append('tspan').text(step.numChars).attr('class', 'left')
+                        .style('fill', 'blue');
+                    // x
+                    g.append('tspan').text('x').attr('class', 'left');
+                    // times
+                    g.append('tspan').text(step.times).attr('class', 'left')
+                        .style('fill', 'green');
+                    // )
+                    g.append('tspan').text(')').attr('class', 'left');
+                    // Rest
+                    g.append('tspan').text(step.text.slice(0, step.numChars)).attr('class', 'left')
+                        .style('fill', 'blue')
+                        .transition().duration(1000)
+                        .style('opacity', 0)
+                        .on('start', function() {
+                            op.selectAll('tspan').remove();
+                            op.append('tspan').text('+');
+                            op.append('tspan').text(step.numChars).style('fill', 'blue');
+                            op.append('tspan').text('x');
+                            op.append('tspan').text(step.times).style('fill', 'green');
+                        }).on('end', function() {
+                            g.selectAll('.left').remove();
+                            point.text(+point.text() + step.numChars * step.times);
+                        });
+                    g.append('tspan').text(step.text.slice(step.numChars));
+                }
+
+                idx++;
+
+                if (idx === steps.length) timer.stop();
+            }, 1100);
+        }
+
+        function sleep(miliseconds) {
+        var currentTime = new Date().getTime();
+
+            while (currentTime + miliseconds >= new Date().getTime()) {
+            }
+        }
+    </script>
+</html>
