@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset='utf-8'>
+        <title>Advent of Code 2016 - Day 13</title>
+    </head>
+    <body>
+        <style>
+            html, body, svg {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                display: block;
+                font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif;
+                font-size: 14px;
+            }
+            .line {
+                fill: none;
+                stroke: black;
+                stroke-width: 1px;
+            }
+            .input {
+                position: fixed;
+                left: 5px;
+                top: 5px;
+            }
+        </style>
+
+        <svg></svg>
+        <div class="input">
+            <div style="margin-bottom:3px">Try your own input by uploading the data file.</div>
+
+            <input type="file" id='file'>
+            <input type="submit" id='submit' value='Run'>
+        </div>
+
+        <script src='https://d3js.org/d3.v4.min.js'></script>
+        <script src='https://cdn.jsdelivr.net/lodash/4.17.2/lodash.min.js'></script>
+    </body>
+
+    <script type='text/javascript'>
+        // Update data with content from file
+        d3.select('#file').node().addEventListener('change', function(e) {
+            var fileReader = new FileReader();
+            fileReader.onload = function(f) {
+                data = f.target.result.trim();
+            };
+
+            fileReader.readAsText(e.target.files[0]);
+            timer.stop();
+        });
+
+        d3.select('#submit').on('click', function() {
+            timer.stop();
+            main();
+        });
+
+        let data;
+        let svg, svgWidth, svgHeight;
+        let timer;
+        let idx;
+
+        // Read data input
+        d3.request('day13.txt')
+            .mimeType("text/plain")
+            .response(xhr => xhr.responseText)
+            .get(function(content) {
+                data = content;
+                main();
+            });
+
+        function main() {
+            init();
+            // solve1();
+            solve2();
+            // draw();
+        }
+
+        function solve1() {
+            data = +data;
+            const visited = {};
+            const q = [ { x: 1, y: 1, steps: 0 } ];
+            let c;
+            let maxIterations = 10000;
+
+            while (q.length) {
+                c = q.shift();
+
+                console.log(c.x, c.y, c.steps);
+
+                if (c.x === 31 && c.y === 39) break;
+
+                visited[key(c.x, c.y)] = 1;
+
+                if (c.x - 1 >= 0 && isOpen(c.x - 1, c.y) && !visited[key(c.x - 1, c.y)]) q.push({ x: c.x - 1, y: c.y, steps: c.steps + 1 });
+                if (c.x + 1 >= 0 && isOpen(c.x + 1, c.y) && !visited[key(c.x + 1, c.y)]) q.push({ x: c.x + 1, y: c.y, steps: c.steps + 1 });
+                if (c.y - 1 >= 0 && isOpen(c.x, c.y - 1) && !visited[key(c.x, c.y - 1)]) q.push({ x: c.x, y: c.y - 1, steps: c.steps + 1 });
+                if (c.y + 1 >= 0 && isOpen(c.x, c.y + 1) && !visited[key(c.x, c.y + 1)]) q.push({ x: c.x, y: c.y + 1, steps: c.steps + 1 });
+
+                maxIterations--;
+
+                if (!maxIterations) break;
+            }
+
+            console.log(c.steps, maxIterations, q.length);
+        }
+
+        function key(x, y) {
+            return x + '-' + y;
+        }
+
+        function isOpen(x, y) {
+            const v = x * x + 3 * x + 2 * x * y + y + y * y + data;
+            return v.toString(2).split('').filter(d => d === '1').length % 2 === 0;
+        }
+
+        function solve2() {
+            data = +data;
+            const visited = {};
+            const q = [ { x: 1, y: 1, steps: 0 } ];
+            let c;
+            let maxIterations = 10000;
+
+            while (q.length) {
+                c = q.shift();
+
+                console.log(c.x, c.y, c.steps);
+
+                if (c.steps === 51) break;
+
+                visited[key(c.x, c.y)] = 1;
+
+                if (c.x - 1 >= 0 && isOpen(c.x - 1, c.y) && !visited[key(c.x - 1, c.y)]) q.push({ x: c.x - 1, y: c.y, steps: c.steps + 1 });
+                if (c.x + 1 >= 0 && isOpen(c.x + 1, c.y) && !visited[key(c.x + 1, c.y)]) q.push({ x: c.x + 1, y: c.y, steps: c.steps + 1 });
+                if (c.y - 1 >= 0 && isOpen(c.x, c.y - 1) && !visited[key(c.x, c.y - 1)]) q.push({ x: c.x, y: c.y - 1, steps: c.steps + 1 });
+                if (c.y + 1 >= 0 && isOpen(c.x, c.y + 1) && !visited[key(c.x, c.y + 1)]) q.push({ x: c.x, y: c.y + 1, steps: c.steps + 1 });
+
+                maxIterations--;
+
+                if (!maxIterations) break;
+            }
+
+            console.log(_.size(visited), maxIterations, q.length);
+        }
+
+        function init() {
+            idx = 1;
+
+            d3.select('svg').remove();
+            d3.select('body').append('svg');
+            svg = d3.select('svg');
+            svgWidth = svg.node().getBoundingClientRect().width,
+            svgHeight = svg.node().getBoundingClientRect().height;
+        }
+
+        // function draw() {
+
+        // 	// Animate
+        //     timer = d3.interval(function() {
+
+        //         idx++;
+
+        //         if (idx == .length) timer.stop();
+        //     }, 100);
+        // }
+    </script>
+</html>
