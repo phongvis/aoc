@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset='utf-8'>
+        <title>Advent of Code 2016 - Day 14</title>
+    </head>
+    <body>
+        <style>
+            html, body, svg {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                display: block;
+                font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif;
+                font-size: 14px;
+            }
+            .line {
+                fill: none;
+                stroke: black;
+                stroke-width: 1px;
+            }
+            .input {
+                position: fixed;
+                left: 5px;
+                top: 5px;
+            }
+        </style>
+
+        <svg></svg>
+        <div class="input">
+            <div style="margin-bottom:3px">Try your own input by uploading the data file.</div>
+
+            <input type="file" id='file'>
+            <input type="submit" id='submit' value='Run'>
+        </div>
+
+        <script src='https://d3js.org/d3.v4.min.js'></script>
+        <script src='https://cdn.jsdelivr.net/lodash/4.17.2/lodash.min.js'></script>
+        <script src='http://www.myersdaily.org/joseph/javascript/md5.js'></script>
+    </body>
+
+    <script type='text/javascript'>
+        // Update data with content from file
+        d3.select('#file').node().addEventListener('change', function(e) {
+            var fileReader = new FileReader();
+            fileReader.onload = function(f) {
+                data = f.target.result.trim();
+            };
+
+            fileReader.readAsText(e.target.files[0]);
+            timer.stop();
+        });
+
+        d3.select('#submit').on('click', function() {
+            timer.stop();
+            main();
+        });
+
+        let data;
+        let svg, svgWidth, svgHeight;
+        let timer;
+        let idx;
+
+        // Read data input
+        d3.request('day14.txt')
+            .mimeType("text/plain")
+            .response(xhr => xhr.responseText)
+            .get(function(content) {
+                data = content;
+                main();
+            });
+
+        function main() {
+            init();
+            // solve1();
+            x = Date.now();
+            solve2();
+            console.log(Date.now() - x);
+            // draw();
+        }
+
+        function solve1() {
+            let idx = -1;
+
+            _.times(64, () => {
+                idx++;
+                let found = false;
+                while (true) {
+                    let hash = md5(data + idx),
+                        result = hash.match(/(\w)\1\1/);
+
+                    if (result) {
+                        const c = result[1] + result[1] + result[1] + result[1] + result[1];
+
+                        for (let i = idx + 1; i <= idx + 1000; i++) {
+                            hash = md5(data + i);
+                            if (hash.includes(c)) {
+                                console.log(c, hash);
+                                found = true;
+                                break;
+                            }
+                        }
+
+                        if (!found) idx++;
+                    } else {
+                        idx++;
+                    }
+
+                    if (found) break;
+                }
+            });
+
+            console.log(idx);
+        }
+
+        function solve2() {
+            let idx = -1,
+                count = 0;
+
+            const indexLookup = {}; // check if index will contain xxxxx
+
+            _.times(64, () => {
+                count++;
+                idx++;
+                let found = false;
+                while (true) {
+                    let hash = getHash(data + idx),
+                        result = hash.match(/(\w)\1\1/);
+
+                    if (result) {
+                        console.log('found candidate', idx);
+                        const c = result[1] + result[1] + result[1] + result[1] + result[1];
+
+                        for (let i = idx + 1; i <= idx + 1000; i++) {
+                            if (indexLookup[i] === false) continue;
+
+                            if (indexLookup[i + ' ' + c] === true) {
+                                console.log(count, c, hash, idx, 'got it');
+                                found = true;
+                                break;
+                            } else if (indexLookup[i + ' ' + c] === undefined) {
+                                hash = getHash(data + i);
+                                result = hash.match(/(\w)\1\1\1\1/);
+                                if (result) {
+                                    if (result[0] === c) {
+                                        indexLookup[i + ' ' + c] = true;
+
+                                        console.log(count, c, hash, idx);
+                                        found = true;
+                                        break;
+                                    } else {
+                                        indexLookup[i + ' ' + c] = false;
+                                    }
+                                } else {
+                                    indexLookup[i] = false;
+                                }
+                            }
+                        }
+
+                        if (!found) idx++;
+                    } else {
+                        idx++;
+                    }
+
+                    if (found) break;
+                }
+            });
+
+            console.log(idx);
+        }
+
+        const hashLookup = {};
+
+        function getHash(k) {
+            if (hashLookup[k]) return hashLookup[k];
+
+            let newKey = k;
+            _.times(2017, function() {
+                newKey = md5(newKey);
+            });
+
+            hashLookup[k] = newKey;
+
+            return newKey;
+        }
+
+        function init() {
+            idx = 1;
+
+            d3.select('svg').remove();
+            d3.select('body').append('svg');
+            svg = d3.select('svg');
+            svgWidth = svg.node().getBoundingClientRect().width,
+            svgHeight = svg.node().getBoundingClientRect().height;
+        }
+
+        // function draw() {
+
+        // 	// Animate
+        //     timer = d3.interval(function() {
+
+        //         idx++;
+
+        //         if (idx == .length) timer.stop();
+        //     }, 100);
+        // }
+    </script>
+</html>
