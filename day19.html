@@ -2,7 +2,7 @@
 <html lang='en'>
     <head>
         <meta charset='utf-8'>
-        <title>Advent of Code 2016 - Day </title>
+        <title>Advent of Code 2016 - Day 19</title>
     </head>
     <body>
         <style>
@@ -62,7 +62,7 @@
         let idx;
 
         // Read data input
-        d3.request('day.txt')
+        d3.request('day19.txt')
             .mimeType("text/plain")
             .response(xhr => xhr.responseText)
             .get(function(content) {
@@ -72,17 +72,48 @@
 
         function main() {
             init();
-            solve1();
-            // solve2();
+            // solve1();
+            solve2();
             // draw();
         }
 
         function solve1() {
-            data.split('\n').map(row => {
-            });
+            const numElves = +data;
+            let presents = _.range(1, numElves + 1);
+            let idx = 0;
+            while (presents.length >= 2) {
+                const oldLength = presents.length;
+                presents = _.range(0, presents.length, 2).map(i => presents[i]);
+                if (oldLength % 2) {
+                    presents.unshift(presents.pop());
+                }
+            }
+            console.log(presents[0]);
         }
 
         function solve2() {
+            x = performance.now();
+            const numElves = +data;
+            let presents = _.range(1, numElves + 1);
+            let idx = 0;
+            while (presents.length >= 2) {
+                let removeIdx = 0,
+                    count = 0;
+                while (removeIdx < presents.length) {
+                    removeIdx = Math.floor((presents.length - count) / 2) + 2 * count;
+                    
+                    if (removeIdx >= presents.length) break;
+                    
+                    presents[removeIdx] = 0;
+                    count++;
+                }
+
+                // Remove all here
+                presents = presents.filter(d => d > 0);
+                presents = presents.slice(count).concat(presents.slice(0, count));
+            }
+            console.log(presents[0]);
+            console.log('took', performance.now() - x);
         }
 
         function init() {

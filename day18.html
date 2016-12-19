@@ -2,7 +2,7 @@
 <html lang='en'>
     <head>
         <meta charset='utf-8'>
-        <title>Advent of Code 2016 - Day </title>
+        <title>Advent of Code 2016 - Day 18</title>
     </head>
     <body>
         <style>
@@ -36,7 +36,6 @@
 
         <script src='https://d3js.org/d3.v4.min.js'></script>
         <script src='https://cdn.jsdelivr.net/lodash/4.17.2/lodash.min.js'></script>
-        <script src='http://www.myersdaily.org/joseph/javascript/md5.js'></script>
     </body>
 
     <script type='text/javascript'>
@@ -62,7 +61,7 @@
         let idx;
 
         // Read data input
-        d3.request('day.txt')
+        d3.request('day18.txt')
             .mimeType("text/plain")
             .response(xhr => xhr.responseText)
             .get(function(content) {
@@ -78,8 +77,21 @@
         }
 
         function solve1() {
-            data.split('\n').map(row => {
+            let row = data.split('').map(d => d === '.');
+            const rows = [ row ];
+            _.times(39, function() {
+                let r = [];
+                for (let i = 0; i < row.length; i++) {
+                    const left = i === 0 ? true : row[i - 1];
+                    const center = row[i];
+                    const right = i === row.length - 1 ? true : row[i + 1];
+                    r[i] = !(!left && !center && right || !center && !right && left || !left && center && right || left && center && !right);  
+                }
+                rows.push(r);
+                row = r;
             });
+
+            console.log(d3.sum(rows, r => d3.sum(r, c => c ? 1 :0)));
         }
 
         function solve2() {

@@ -2,7 +2,7 @@
 <html lang='en'>
     <head>
         <meta charset='utf-8'>
-        <title>Advent of Code 2016 - Day </title>
+        <title>Advent of Code 2016 - Day 15</title>
     </head>
     <body>
         <style>
@@ -36,7 +36,6 @@
 
         <script src='https://d3js.org/d3.v4.min.js'></script>
         <script src='https://cdn.jsdelivr.net/lodash/4.17.2/lodash.min.js'></script>
-        <script src='http://www.myersdaily.org/joseph/javascript/md5.js'></script>
     </body>
 
     <script type='text/javascript'>
@@ -62,7 +61,7 @@
         let idx;
 
         // Read data input
-        d3.request('day.txt')
+        d3.request('day15.txt')
             .mimeType("text/plain")
             .response(xhr => xhr.responseText)
             .get(function(content) {
@@ -78,8 +77,27 @@
         }
 
         function solve1() {
-            data.split('\n').map(row => {
+            const discs = data.split('\n').map(row => {
+                const match = row.match(/Disc #\d+ has (\d+) positions; at time=0, it is at position (\d+)./);
+                return {
+                    positions: +match[1],
+                    offset: +match[2]
+                };
             });
+
+            // Part 2
+            discs.push({ positions: 11, offset: 0 });
+
+            function pass(t) {
+                return discs.every((d, i) => (t + i + 1 + d.offset) % d.positions === 0);
+            }
+
+            let i = 0;
+            while (!pass(i)) { 
+                i++;
+            }
+
+            console.log(i);
         }
 
         function solve2() {

@@ -2,7 +2,7 @@
 <html lang='en'>
     <head>
         <meta charset='utf-8'>
-        <title>Advent of Code 2016 - Day </title>
+        <title>Advent of Code 2016 - Day 17</title>
     </head>
     <body>
         <style>
@@ -62,7 +62,7 @@
         let idx;
 
         // Read data input
-        d3.request('day.txt')
+        d3.request('day17.txt')
             .mimeType("text/plain")
             .response(xhr => xhr.responseText)
             .get(function(content) {
@@ -78,11 +78,72 @@
         }
 
         function solve1() {
-            data.split('\n').map(row => {
-            });
+            let maxIterations = 1000000;
+
+            const code = data;
+
+            let max = 0;
+
+            const moves = {
+                U: (x, y) => ({ x: x, y: y - 1 }),
+                D: (x, y) => ({ x: x, y: y + 1 }),
+                L: (x, y) => ({ x: x - 1, y: y }),
+                R: (x, y) => ({ x: x + 1, y: y }),
+            };
+
+            const start = { x: 0, y: 0, dirs: '' };
+
+            const q = [ start ];
+            let doors = getOpenList(code, start.dirs);
+
+            let c;
+
+            while (q.length) {
+                c = q.shift();
+                // console.info('pop', key(c), c.dirs, q.length);
+
+                if (c.x === 3 && c.y === 3) {
+                    // console.warn('goallllllllll')
+                    // console.log(c.dirs)
+                    max = Math.max(max, c.dirs.length);
+                    continue; // Continue to get all paths!
+                    // break; // Break to get the first, shortest one!
+                }
+
+                doors = getOpenList(code, c.dirs);                
+
+                'UDLR'.split('').filter((d, i) => doors[i]).forEach(d => {
+                    const m = moves[d](c.x, c.y);
+                    if (m.x < 0 || m.x > 3 || m.y < 0 || m.y > 3) return;
+
+                    m.dirs = c.dirs + d;
+
+                    q.push(m);
+                    // console.log('add', key(m), m.dirs);
+                });
+
+                maxIterations--;
+
+                if (!maxIterations) {
+                    console.error('exceed max iterations');
+                    break;
+                }
+            }
+
+            if (!q.length) {
+                console.error('no more states');
+            }
+
+            // console.log('Path is', c.dirs);
+            console.log(max);
         }
 
-        function solve2() {
+        function getOpenList(code, path) {
+            return md5(code + path).slice(0, 4).split('').map(d => 'bcdef'.includes(d));
+        }
+
+        function key(c) {
+            return c.x + '-' + c.y;
         }
 
         function init() {

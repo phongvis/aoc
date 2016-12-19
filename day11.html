@@ -59,16 +59,12 @@
         let svg, svgWidth, svgHeight;
         let timer;
         let idx;
+        let stateCount = 0;
+
+        const addedStates = {},
+            log = false;            
 
         // Read data input
-        d3.request('day11.txt')
-            .mimeType("text/plain")
-            .response(xhr => xhr.responseText)
-            .get(function(content) {
-                data = content;
-                main();
-            });
-
         function main() {
             init();
             solve1();
@@ -76,9 +72,233 @@
             // draw();
         }
 
+        main();
+
         function solve1() {
-            data.split('\n').map(row => {
+            const start = {
+                ele: 0,
+                steps: 0,
+                floors: [
+                    ["SG", "SM", "PG", "PM", "EG", "EM", "DG", "DM"],
+                    ["TG", "RG", "RM", "CG", "CM"],
+                    ["TM"],
+                    []
+                ]
+                // floors: [
+                //     ["SG", "SM", "HM", "LM"],
+                //     ["HG", "PG", "PM"],
+                //     ["LG"],
+                //     []
+                // ]
+                // floors: [
+                //     ["SG", "SM", "PG", "PM"],
+                //     ["TG", "RG", "RM", "CG", "CM"],
+                //     ["TM"],
+                //     []
+                // ]
+            };
+
+            start.floors.forEach(f => { 
+                f.sort();
+                computeChips(f); 
             });
+            start.id = key(start);      
+
+            const states = [ start ];
+
+            // f = g + h: for initial state, g = 0
+            start.distance = computeDistance(start);
+
+            addedStates[start.id] = 1;
+            // let maxIterations = 1000000;
+            let s;
+            
+            let startTime = Date.now();            
+
+            while (states.length) {
+                // Sort state by distance to be able to select the best one first
+            
+                const idx = d3.scan(states, (a, b) => d3.ascending(a.distance, b.distance));
+                s = states[idx];
+                states.splice(idx, 1);
+
+                // s = states.shift();
+                
+                if (log) console.info('pop', s.id + '\t' + s.distance);
+
+                if (isGoal(s)) {
+                    console.warn('goalllllllllll', s.steps);
+                    break;
+                }
+
+                states.push(...generateNextStates(s));
+                
+                // maxIterations--;
+                // if (!maxIterations) {
+                //     console.error('exceed max iterations');
+                //     break;
+                // }
+            }
+
+            console.log('took ', Date.now() - startTime);
+            console.log(stateCount + ' states');
+
+            if (states.length === 0) {
+                console.error('no more state');
+            }
+
+            // if (isGoal(s)) {
+            //     let steps = [ s ];
+            //     while (s.prev) {
+            //         s = s.prev;
+            //         steps.push(s);
+            //     }
+
+            //     steps = steps.reverse();
+            //     steps.forEach(s => {
+            //         console.log(s.id + '\t' + s.distance);
+            //     });
+            // }
+        }
+
+        function key(s) {
+            // New way to generate key! All pairs are exchangeable, only need to know how many pairs, how many chips, how many generators.
+            return s.floors.map(f => {
+                const pairs = _.intersection(f.chips, f.generators);
+                return pairs.length + '-' + _.difference(f.chips, pairs).length + '-' + _.difference(f.generators, pairs).length;
+            }).join('...') + '...' + (s.ele + 1);
+
+            // return s.floors.map(f => f.join('-')).join('...') + '\t' + (s.ele + 1);
+        }
+
+        function generateNextStates(s) {
+            const states = [],
+                floor = s.floors[s.ele];
+            
+            if (s.ele < 3) { // Go up
+                states.push(...move2(s, floor, s.ele, s.ele + 1));
+
+                // If it's possible to move 2 up, don't move 1 up
+                if (states.length === 0) states.push(...move1(s, floor, s.ele, s.ele + 1));
+            }
+
+            if (s.ele > 0) { // Go down
+                // If all lower floors are empty, don't move objects down
+                const allDownEmpty = _.range(0, s.ele).every(e => s.floors[e].length === 0);
+                if (!allDownEmpty) {
+                    const pl = states.length;
+                    states.push(...move1(s, floor, s.ele, s.ele - 1));
+
+                    // If it's possible to move 1 down, don't move 2 down
+                    if (states.length === pl) states.push(...move2(s, floor, s.ele, s.ele - 1));
+                }
+            }
+                
+            return states;
+        }
+
+        function move1(s, floor, currentEle, newEle) {
+            const states = [];
+                
+            // Move 1 object
+            floor.forEach((o, i) => {
+                const newState = { floors: s.floors.map(f => { 
+                    const nf = f.slice(0);
+                    nf.chips = f.chips;
+                    nf.generators = f.generators;   
+                    return nf;
+                })};
+
+                newState.floors[currentEle].splice(i, 1);
+                newState.floors[newEle].push(o);
+                newState.ele = newEle;
+                newState.floors[newEle].sort();
+                newState.floors[currentEle].sort();
+                computeChips(newState.floors[currentEle]);
+                computeChips(newState.floors[newEle]);                    
+                newState.id = key(newState);
+            
+                if (isValid(newState)) addState(states, newState, s);
+            });
+            
+            return states;
+        }
+
+        function move2(s, floor, currentEle, newEle) {
+            const states = [];
+
+            // Move 2 objects
+            for (let i = 0; i < floor.length; i++) {
+                for (let j = i + 1; j < floor.length; j++) {
+                    // Move pair (i, j)
+                    const newState = { floors: s.floors.map(f => { 
+                        const nf = f.slice(0);
+                        nf.chips = f.chips;
+                        nf.generators = f.generators;   
+                        return nf;
+                    })};
+
+                    newState.floors[newEle].push(floor[i], floor[j]);
+                    newState.floors[currentEle].splice(j, 1);
+                    newState.floors[currentEle].splice(i, 1);
+                    newState.floors[newEle].sort();
+                    newState.floors[currentEle].sort();
+                    computeChips(newState.floors[currentEle]);
+                    computeChips(newState.floors[newEle]);
+                    newState.ele = newEle;
+                    newState.id = key(newState);
+
+                    if (isValid(newState)) addState(states, newState, s);
+                }
+            }
+
+            return states;
+        }
+
+        function isEquivalent(s1, s2) {
+            if (s1.ele !== s2.ele) return false;
+
+            // Ignore all pairs
+
+        }
+
+        function checkEquivalent(s) {
+            return _.some(addedStates, state => isEquivalent(s, state));
+        }
+
+        function computeChips(f) {
+            f.chips = f.filter(o => o[1] === 'M').map(o => o[0]);
+            f.generators = f.filter(o => o[1] === 'G').map(o => o[0]);
+        }
+
+        function addState(states, newState, s) {
+            stateCount++;
+            newState.steps = s.steps + 1;
+            // newState.prev = s;
+            newState.distance = computeDistance(newState);
+            states.push(newState);
+            addedStates[newState.id] = 1;
+            if (log) console.log('add', newState.id + '\t' + newState.distance);
+        }
+
+        function computeDistance(s) {
+            // f = g + h
+            return s.steps + d3.sum(s.floors, (f, i) => (3 - i) * f.length);
+        }
+
+        function isGoal(s) {
+            return s.floors[0].length + s.floors[1].length + s.floors[2].length === 0; 
+        }
+
+        function isValid(s) {
+            return !addedStates[s.id] && s.floors.every(isFloorValid);
+        }
+
+        function isFloorValid(f) {
+            // It's invalid if there's a microchip and some generators but without the corresponding one.
+            if (f.chips.length === 0 || f.generators.length === 0) return true;
+
+            return f.chips.every(c => f.generators.includes(c));
         }
 
         function solve2() {

@@ -99,7 +99,10 @@
 
                 maxIterations--;
 
-                if (!maxIterations) break;
+                if (!maxIterations) {
+                    console.error('exceed max iterations');
+                    break;
+                }
             }
 
             console.log(c.steps, maxIterations, q.length);
