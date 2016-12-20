@@ -78,6 +78,12 @@
         }
 
         function solve1() {
+            const blockIps = data.split('\n').map(row => {
+                const tokens = row.split('-');
+                return { start: +tokens[0], end: +tokens[1] };
+            });
+
+            console.log(_.minBy(blockIps, 'start'));
         }
 
         function solve2() {
