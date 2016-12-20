@@ -72,8 +72,8 @@
 
         function main() {
             init();
-            solve1();
-            // solve2();
+            // solve1();
+            solve2();
             // draw();
         }
 
@@ -83,10 +83,42 @@
                 return { start: +tokens[0], end: +tokens[1] };
             });
 
-            console.log(_.minBy(blockIps, 'start'));
+            blockIps.sort((a, b) => d3.ascending(a.start, b.start));
+
+            let lastBlockIp = -1;
+            
+            for (let i = 0; i < blockIps.length; i++) {
+                if (lastBlockIp + 1 < blockIps[i].start) {
+                    break;
+                } else {
+                    lastBlockIp = Math.max(lastBlockIp, blockIps[i].end);
+                }
+            }
+
+            console.log(lastBlockIp + 1);
         }
 
         function solve2() {
+            const blockIps = data.split('\n').map(row => {
+                const tokens = row.split('-');
+                return { start: +tokens[0], end: +tokens[1] };
+            });
+
+            const max = 4294967296;
+
+            blockIps.sort((a, b) => d3.ascending(a.start, b.start));
+
+            let lastBlockIp = -1;
+            let count = 0;
+            for (let i = 0; i < blockIps.length; i++) {
+                if (blockIps[i].start > lastBlockIp + 1) {
+                    lastBlockIp = blockIps[i].start - 1;
+                }
+                count += Math.max(lastBlockIp, blockIps[i].end) - lastBlockIp;
+                lastBlockIp = Math.max(lastBlockIp, blockIps[i].end);
+            }
+
+            console.log(lastBlockIp + 1, max - count);
         }
 
         function init() {
