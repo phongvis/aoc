@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset='utf-8'>
+        <title>Advent of Code 2016 - Day 21</title>
+    </head>
+    <body>
+        <style>
+            html, body, svg {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                display: block;
+                font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif;
+                font-size: 14px;
+            }
+            .line {
+                fill: none;
+                stroke: black;
+                stroke-width: 1px;
+            }
+            .input {
+                position: fixed;
+                left: 5px;
+                top: 5px;
+            }
+        </style>
+
+        <svg></svg>
+        <div class="input">
+            <div style="margin-bottom:3px">Try your own input by uploading the data file.</div>
+
+            <input type="file" id='file'>
+            <input type="submit" id='submit' value='Run'>
+        </div>
+
+        <script src='https://d3js.org/d3.v4.min.js'></script>
+        <script src='https://cdn.jsdelivr.net/lodash/4.17.2/lodash.min.js'></script>
+        <script src='http://www.myersdaily.org/joseph/javascript/md5.js'></script>
+    </body>
+
+    <script type='text/javascript'>
+        // Update data with content from file
+        d3.select('#file').node().addEventListener('change', function(e) {
+            var fileReader = new FileReader();
+            fileReader.onload = function(f) {
+                data = f.target.result.trim();
+            };
+
+            fileReader.readAsText(e.target.files[0]);
+            timer.stop();
+        });
+
+        d3.select('#submit').on('click', function() {
+            timer.stop();
+            main();
+        });
+
+        let data;
+        let svg, svgWidth, svgHeight;
+        let timer;
+        let idx;
+
+        // Read data input
+        d3.request('day21.txt')
+            .mimeType("text/plain")
+            .response(xhr => xhr.responseText)
+            .get(function(content) {
+                data = content;
+                main();
+            });
+
+        function main() {
+            init();
+            // solve1();
+            solve2();
+            // draw();
+        }
+
+        function solve1(s) {
+            s = s.split('');
+            data.split('\n').map(row => {
+                if (row.startsWith('move')) {
+                    const result = row.match(/(\d+)/g);
+                    s = move(s, +result[0], +result[1]);
+                    // console.log(row, s);
+                } else if (row.startsWith('swap position')) {
+                    const result = row.match(/(\d+)/g);
+                    s = swap(s, +result[0], +result[1]);
+                    // console.log(row, s);
+                } else if (row.startsWith('reverse')) {
+                    const result = row.match(/(\d+)/g);
+                    s = reverse(s, +result[0], +result[1]);
+                    // console.log(row, s);
+                } else if (row.startsWith('swap letter')) {
+                    s = swapLetter(s, row[row.indexOf('with') - 2], row.substr(row.length - 1));
+                    // console.log(row, s);
+                } else if (row.startsWith('rotate left')) {
+                    const result = row.match(/(\d+)/g);
+                    s = rotateLeft(s, +result[0]);
+                    // console.log(row, s);
+                } else if (row.startsWith('rotate right')) {
+                    const result = row.match(/(\d+)/g);
+                    s = rotateRight(s, +result[0]);
+                    // console.log(row, s);
+                } else if (row.startsWith('rotate based')) {
+                    s = rotate(s, row.substr(row.length - 1));
+                    // console.log(row, s);
+                } else {
+                    console.error('none');
+                }
+            });
+
+            return s.join('');
+        }
+
+        function rotate(s, d) {
+            let idx = s.indexOf(d);
+            if (idx >= 4) idx++;
+
+            return rotateRight(s, idx + 1);
+        }
+
+        function rotateLeft(s, x) {
+            _.times(x, function() {
+                s.push(s.shift());
+            });
+
+            return s;
+        }
+
+        function rotateRight(s, x) {
+            _.times(x, function() {
+                s.unshift(s.pop());
+            });
+
+            return s;
+        }
+
+        function move(s, x, y) {
+            const d = s.splice(x, 1)[0];
+            s.splice(y, 0, d);
+
+            return s;
+        }
+
+        function swap(s, x, y) {
+            const tmp = s[x];
+            s[x] = s[y];
+            s[y] = tmp;
+
+            return s;
+        }
+
+        function swapLetter(s, x, y) {
+            return swap(s, s.indexOf(x), s.indexOf(y));
+        }
+
+        function reverse(s, x, y) {
+            return s.slice(0, x).concat(s.slice(x, y + 1).reverse()).concat(s.slice(y + 1));
+        }
+
+
+        function solve2() {
+            let output = 'fbgdceah';
+
+            var permArr = [],
+                usedChars = [];
+
+            function permute(input) {
+                var i, ch;
+                for (i = 0; i < input.length; i++) {
+                    ch = input.splice(i, 1)[0];
+                    usedChars.push(ch);
+                    if (input.length == 0) {
+                    permArr.push(usedChars.slice());
+                    }
+                    permute(input);
+                    input.splice(i, 0, ch);
+                    usedChars.pop();
+                }
+                return permArr
+            };
+
+            console.log(solve1('abcdefgh'));
+
+            let input = 'abcdefgh'.split('');
+
+            const perms = permute(_.range(0, 8));
+            for (let i = 0; i < perms.length; i++) {
+                const p = d3.permute(input, perms[i]);
+                if (solve1(p.join('')) === output) {
+                    console.log(p.join(''));
+                    break;
+                }
+            }
+        }
+
+
+        function init() {
+            idx = 1;
+
+            d3.select('svg').remove();
+            d3.select('body').append('svg');
+            svg = d3.select('svg');
+            svgWidth = svg.node().getBoundingClientRect().width,
+            svgHeight = svg.node().getBoundingClientRect().height;
+        }
+
+        // function draw() {
+
+        // 	// Animate
+        //     timer = d3.interval(function() {
+
+        //         idx++;
+
+        //         if (idx == .length) timer.stop();
+        //     }, 100);
+        // }
+    </script>
+</html>

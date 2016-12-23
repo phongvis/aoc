@@ -2,7 +2,7 @@
 <html lang='en'>
     <head>
         <meta charset='utf-8'>
-        <title>Advent of Code 2016 - Day 20</title>
+        <title>Advent of Code 2016 - Day 22</title>
     </head>
     <body>
         <style>
@@ -62,7 +62,7 @@
         let idx;
 
         // Read data input
-        d3.request('day20.txt')
+        d3.request('day22.txt')
             .mimeType("text/plain")
             .response(xhr => xhr.responseText)
             .get(function(content) {
@@ -78,45 +78,55 @@
         }
 
         function solve1() {
-            const blockIps = data.split('\n').map(row => {
-                const tokens = row.split('-');
-                return { start: +tokens[0], end: +tokens[1] };
+            const nodes = data.split('\n').map(row => {
+                const items = row.split(' ').filter(d => d);
+                return {
+                    x: +items[0].split('-')[1].substr(1),
+                    y: +items[0].split('-')[2].substr(1),
+                    size: +items[1].substr(0, items[1].length - 1),
+                    used: +items[2].substr(0, items[2].length - 1),
+                    avail: +items[3].substr(0, items[3].length - 1)
+                };
             });
 
-            blockIps.sort((a, b) => d3.ascending(a.start, b.start));
-
-            let lastBlockIp = -1;
-
-            for (let i = 0; i < blockIps.length; i++) {
-                if (lastBlockIp + 1 < blockIps[i].start) {
-                    break;
-                } else {
-                    lastBlockIp = Math.max(lastBlockIp, blockIps[i].end);
-                }
-            }
-
-            console.log(lastBlockIp + 1);
-        }
-
-        function solve2() {
-            const blockIps = data.split('\n').map(row => {
-                const tokens = row.split('-');
-                return { start: +tokens[0], end: +tokens[1] };
-            });
-
-            blockIps.sort((a, b) => d3.ascending(a.start, b.start));
-
-            let lastBlockIp = -1;
             let count = 0;
-            for (let i = 0; i < blockIps.length; i++) {
-                if (lastBlockIp + 1 < blockIps[i].start) {
-                    count += blockIps[i].start - lastBlockIp - 1;
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
+                    const a = nodes[i],
+                        b = nodes[j];
+                    if (a.used > 0 && a.used <= b.avail || b.used > 0 && b.used <= a.avail) {
+                        count++;
+                    }
                 }
-
-                lastBlockIp = Math.max(lastBlockIp, blockIps[i].end);
             }
 
             console.log(count);
+        }
+
+        function solve2() {
+            const w = 39, h = 25;
+            const grid = _.range(0, h).map(i => _.range(0, w).map(j => undefined));
+
+            const nodes = data.split('\n').map(row => {
+                const items = row.split(' ').filter(d => d);
+                const n = {
+                    x: +items[0].split('-')[1].substr(1),
+                    y: +items[0].split('-')[2].substr(1),
+                    size: +items[1].substr(0, items[1].length - 1),
+                    used: +items[2].substr(0, items[2].length - 1),
+                    avail: +items[3].substr(0, items[3].length - 1)
+                };
+
+                n.text = n.size > 100 ? '#' : n.used === 0 ? '_' : '.';
+
+                if (n.x === w - 1 && n.y === 0) n.text = 'G';
+
+                grid[n.y][n.x] = n;
+            });
+
+            grid.forEach(r => {
+                console.log(r.map(c => c.text).join(''));
+            });
         }
 
         function init() {

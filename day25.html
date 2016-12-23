@@ -2,7 +2,7 @@
 <html lang='en'>
     <head>
         <meta charset='utf-8'>
-        <title>Advent of Code 2016 - Day 20</title>
+        <title>Advent of Code 2016 - Day </title>
     </head>
     <body>
         <style>
@@ -62,7 +62,7 @@
         let idx;
 
         // Read data input
-        d3.request('day20.txt')
+        d3.request('day.txt')
             .mimeType("text/plain")
             .response(xhr => xhr.responseText)
             .get(function(content) {
@@ -72,51 +72,17 @@
 
         function main() {
             init();
-            // solve1();
-            solve2();
+            solve1();
+            // solve2();
             // draw();
         }
 
         function solve1() {
-            const blockIps = data.split('\n').map(row => {
-                const tokens = row.split('-');
-                return { start: +tokens[0], end: +tokens[1] };
+            data.split('\n').map(row => {
             });
-
-            blockIps.sort((a, b) => d3.ascending(a.start, b.start));
-
-            let lastBlockIp = -1;
-
-            for (let i = 0; i < blockIps.length; i++) {
-                if (lastBlockIp + 1 < blockIps[i].start) {
-                    break;
-                } else {
-                    lastBlockIp = Math.max(lastBlockIp, blockIps[i].end);
-                }
-            }
-
-            console.log(lastBlockIp + 1);
         }
 
         function solve2() {
-            const blockIps = data.split('\n').map(row => {
-                const tokens = row.split('-');
-                return { start: +tokens[0], end: +tokens[1] };
-            });
-
-            blockIps.sort((a, b) => d3.ascending(a.start, b.start));
-
-            let lastBlockIp = -1;
-            let count = 0;
-            for (let i = 0; i < blockIps.length; i++) {
-                if (lastBlockIp + 1 < blockIps[i].start) {
-                    count += blockIps[i].start - lastBlockIp - 1;
-                }
-
-                lastBlockIp = Math.max(lastBlockIp, blockIps[i].end);
-            }
-
-            console.log(count);
         }
 
         function init() {

@@ -2,7 +2,7 @@
 <html lang='en'>
     <head>
         <meta charset='utf-8'>
-        <title>Advent of Code 2016 - Day 20</title>
+        <title>Advent of Code 2016 - Day 23</title>
     </head>
     <body>
         <style>
@@ -62,7 +62,7 @@
         let idx;
 
         // Read data input
-        d3.request('day20.txt')
+        d3.request('day23.txt')
             .mimeType("text/plain")
             .response(xhr => xhr.responseText)
             .get(function(content) {
@@ -70,57 +70,87 @@
                 main();
             });
 
+        // Registers
+        let regs,
+            cmds,
+            cmdIdx;
+
         function main() {
             init();
-            // solve1();
-            solve2();
+            solve1();
+            // solve2();
             // draw();
         }
 
         function solve1() {
-            const blockIps = data.split('\n').map(row => {
-                const tokens = row.split('-');
-                return { start: +tokens[0], end: +tokens[1] };
+            cmds = data.split('\n').map(row => {
+                const tokens = row.split(' ');
+                return {
+                    cmd: tokens[0],
+                    p1: tokens[1],
+                    p2: tokens[2],
+                    p3: tokens[3]
+                };
             });
 
-            blockIps.sort((a, b) => d3.ascending(a.start, b.start));
+            while (cmdIdx < cmds.length) {
+                const c = cmds[cmdIdx];
 
-            let lastBlockIp = -1;
+                funcLookup[c.cmd](c.p1, c.p2, c.p3);
 
-            for (let i = 0; i < blockIps.length; i++) {
-                if (lastBlockIp + 1 < blockIps[i].start) {
-                    break;
-                } else {
-                    lastBlockIp = Math.max(lastBlockIp, blockIps[i].end);
-                }
+                cmdIdx++;
+
+                // console.log('[' + (cmdIdx) + ']', c.cmd + '(' + c.p1 + ',' + (c.p2 || '') + ')', regs.a, regs.b, regs.c, regs.d);
             }
 
-            console.log(lastBlockIp + 1);
+            console.log(regs.a);
         }
 
-        function solve2() {
-            const blockIps = data.split('\n').map(row => {
-                const tokens = row.split('-');
-                return { start: +tokens[0], end: +tokens[1] };
-            });
+        const funcLookup = {
+            mlt: (p1, p2, p3) => {
+                regs[p1] += regs[p2] * regs[p3];
+                regs[p2] = regs[p3] = 0;
+            }, pls: (p1, p2) => {
+                regs[p1] += regs[p2] - 1;
+                regs[p2] = 0;
+            }, cpy: (p1, p2) => {
+                if (regs[p2] !== undefined) regs[p2] = isNaN(p1) ? regs[p1] : +p1;
+            }, inc : p1 => {
+                regs[p1]++;
+            }, dec: p1 => {
+                regs[p1]--;
+            }, jnz: (p1, p2) => {
+                if (regs[p1] !== 0) cmdIdx = cmdIdx + (isNaN(p2) ? regs[p2] : +p2) - 1;
+            }, tgl: p1 => {
+                const idx = cmdIdx + regs[p1],
+                    c = cmds[idx];
 
-            blockIps.sort((a, b) => d3.ascending(a.start, b.start));
-
-            let lastBlockIp = -1;
-            let count = 0;
-            for (let i = 0; i < blockIps.length; i++) {
-                if (lastBlockIp + 1 < blockIps[i].start) {
-                    count += blockIps[i].start - lastBlockIp - 1;
+                if (!c) {
+                    return;
                 }
 
-                lastBlockIp = Math.max(lastBlockIp, blockIps[i].end);
+                if (c.cmd === 'inc') {
+                    c.cmd = 'dec';
+                } else if (c.cmd === 'dec') {
+                    c.cmd = 'inc';
+                } else if (c.cmd === 'cpy') {
+                    c.cmd = 'jnz';
+                } else if (c.cmd === 'jnz') {
+                    c.cmd = 'cpy';
+                } else if (c.cmd === 'tgl') {
+                    c.cmd = 'inc';
+                }
             }
+        };
 
-            console.log(count);
+        function solve2() {
         }
 
         function init() {
             idx = 1;
+            regs = { a: 12, b: 0, c: 0, d: 0 },
+            cmds = [],
+            cmdIdx = 0;
 
             d3.select('svg').remove();
             d3.select('body').append('svg');
