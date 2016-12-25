@@ -2,7 +2,7 @@
 <html lang='en'>
     <head>
         <meta charset='utf-8'>
-        <title>Advent of Code 2016 - Day </title>
+        <title>Advent of Code 2016 - Day 24</title>
     </head>
     <body>
         <style>
@@ -36,7 +36,6 @@
 
         <script src='https://d3js.org/d3.v4.min.js'></script>
         <script src='https://cdn.jsdelivr.net/lodash/4.17.2/lodash.min.js'></script>
-        <script src='http://www.myersdaily.org/joseph/javascript/md5.js'></script>
     </body>
 
     <script type='text/javascript'>
@@ -60,9 +59,11 @@
         let svg, svgWidth, svgHeight;
         let timer;
         let idx;
+        let mapLookup; // [ x-y ] return true if free
+        let distanceLookup;
 
         // Read data input
-        d3.request('day.txt')
+        d3.request('day24.txt')
             .mimeType("text/plain")
             .response(xhr => xhr.responseText)
             .get(function(content) {
@@ -78,15 +79,124 @@
         }
 
         function solve1() {
-            data.split('\n').map(row => {
+            // Build map from data input
+            const nodes = [];
+
+            data.split('\n').map((row, i) => {
+                row.split('').forEach((col, j) => {
+                    if (col !== '#') {
+                        if (!isNaN(col)) {
+                            nodes.push({ value: +col, x: i, y: j });
+                        }
+                        mapLookup[key(i, j)] = 1;
+                    }
+                });
             });
+
+            nodes.sort((a, b) => d3.ascending(a.value, b.value));
+
+            const perms = getPerms(nodes.length);
+            let minSteps = Number.MAX_VALUE,
+                minPerm;
+
+            const x = performance.now();
+            perms.forEach(p => {
+                // let sumSteps = computeDistance(nodes[0], nodes[p[0]]);
+                let sumSteps = computeDistance(nodes[0], nodes[p[0]]) + computeDistance(nodes[p[p.length - 1]], nodes[0]); // part 2
+                for (let i = 0; i < p.length - 1; i++) {
+                    sumSteps += computeDistance(nodes[p[i]], nodes[p[i + 1]]);
+                }
+
+                if (sumSteps < minSteps) {
+                    minSteps = sumSteps;
+                    minPerm = p;
+                }
+            });
+
+            console.log('took', performance.now() - x);
+
+            console.log(minSteps, minPerm);
         }
 
-        function solve2() {
+        function key(x, y) {
+            return x + '-' + y;
         }
 
+        function isOpen(x, y) {
+            return mapLookup[ key(x, y) ];
+        }
+
+        function computeDistance(f, t) {
+            const key1 = key(f.x, f.y) + '.' + key(t.x, t.y),
+                key2 = key(t.x, t.y) + '.' + key(f.x, f.y);
+            if (distanceLookup[key1]) return distanceLookup[key1];
+            if (distanceLookup[key2]) return distanceLookup[key2];
+
+            const added = {};
+            const q = [ { x: f.x, y: f.y, steps: 0 } ];
+            let c;
+            let maxIterations = 10000;
+            const neighbors = [ { dx: -1, dy: 0 }, { dx: 1, dy: 0 }, { dx: 0, dy: -1 }, { dx: 0, dy: 1 } ];
+
+            while (q.length) {
+                c = q.shift();
+
+                // console.log(c.x, c.y, c.steps);
+
+                if (c.x === t.x && c.y === t.y) {
+                    distanceLookup[key1] = distanceLookup[key2] = c.steps;
+            
+                    return c.steps;
+                }
+
+                neighbors.forEach(n => {
+                    const x = c.x + n.dx,
+                        y = c.y + n.dy;
+                    if (isOpen(x,y) && !added[key(x, y)]) {
+                        q.push({ x: x, y: y, steps: c.steps + 1 });
+                        added[key(x, y)] = 1;
+                    }
+                });
+
+                maxIterations--;
+
+                if (!maxIterations) {
+                    console.error('exceed max iterations');
+                }
+            }
+
+            if (!q.length) {
+                console.error('no more states');
+            }
+
+            return -1;
+        }
+
+        function getPerms(num) {
+            var permArr = [],
+                usedChars = [];
+
+            function permute(input) {
+                var i, ch;
+                for (i = 0; i < input.length; i++) {
+                    ch = input.splice(i, 1)[0];
+                    usedChars.push(ch);
+                    if (input.length == 0) {
+                        permArr.push(usedChars.slice());
+                    }
+                    permute(input);
+                    input.splice(i, 0, ch);
+                    usedChars.pop();
+                }
+                return permArr;
+            };
+            
+            return permute(_.range(1, num));
+        }
         function init() {
             idx = 1;
+            mapLookup = {};
+            distanceLookup = {};
 
             d3.select('svg').remove();
             d3.select('body').append('svg');

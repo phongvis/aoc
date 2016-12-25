@@ -2,7 +2,7 @@
 <html lang='en'>
     <head>
         <meta charset='utf-8'>
-        <title>Advent of Code 2016 - Day </title>
+        <title>Advent of Code 2016 - Day 25</title>
     </head>
     <body>
         <style>
@@ -62,13 +62,20 @@
         let idx;
 
         // Read data input
-        d3.request('day.txt')
+        d3.request('day25.txt')
             .mimeType("text/plain")
             .response(xhr => xhr.responseText)
             .get(function(content) {
                 data = content;
                 main();
             });
+
+        // Registers
+        let regs,
+            cmds,
+            cmdIdx;
+
+        let output = [];
 
         function main() {
             init();
@@ -78,15 +85,98 @@
         }
 
         function solve1() {
-            data.split('\n').map(row => {
+            cmds = data.split('\n').map(row => {
+                const tokens = row.split(' ');
+                return {
+                    cmd: tokens[0],
+                    p1: tokens[1],
+                    p2: tokens[2],
+                    p3: tokens[3]
+                };
             });
+
+            let a = 0,
+                maxTry = 1000;
+            while (maxTry) {
+                regs.a = a++;
+
+                maxTry--;
+                let maxIt = 100000;
+                output = [];
+                cmdIdx = 0;
+
+                while (cmdIdx < cmds.length) {
+                    const c = cmds[cmdIdx];
+
+                    funcLookup[c.cmd](c.p1, c.p2, c.p3);
+
+                    if (c.cmd === 'out') {
+                        if (!checkValid()) {
+                            // console.log(a - 1, output.join(''));
+                            break;
+                        }
+                    }
+
+                    cmdIdx++;
+
+                    maxIt--;
+                    if (!maxIt) {
+                        // console.error('limit');
+                        break;
+                    }
+
+                    // console.log('[' + (cmdIdx) + ']', c.cmd + '(' + c.p1 + ',' + (c.p2 || '') + ')', regs.a, regs.b, regs.c, regs.d);
+                }
+
+                // console.log(a - 1, output.join(''));
+                if (checkValid(output)) {
+                    console.warn(a - 1, output.join(''));
+                    break;
+                }
+            }
+
+            console.error('done');
         }
+
+        function checkValid() {
+            let s = output.join('');
+            if (s.length % 2) s = s + '1';
+
+            for (let i = 0; i < s.length; i += 2) {
+                if (s[i] !== '0' || s[i + 1] !== '1') return false;
+            }
+
+            return true;
+        }
+
+        const funcLookup = {
+            mlt: (p1, p2, p3) => {
+                regs[p1] += regs[p2] * regs[p3];
+                regs[p2] = regs[p3] = 0;
+            }, pls: (p1, p2) => {
+                regs[p1] += regs[p2] - 1;
+                regs[p2] = 0;
+            }, cpy: (p1, p2) => {
+                if (regs[p2] !== undefined) regs[p2] = isNaN(p1) ? regs[p1] : +p1;
+            }, inc : p1 => {
+                regs[p1]++;
+            }, dec: p1 => {
+                regs[p1]--;
+            }, jnz: (p1, p2) => {
+                if (regs[p1] !== 0 && p1 !== '0') cmdIdx = cmdIdx + (isNaN(p2) ? regs[p2] : +p2) - 1;
+            }, out: p1 => {
+                output.push(regs[p1]);
+            }
+        };
 
         function solve2() {
         }
 
         function init() {
             idx = 1;
+            regs = { a: 0, b: 0, c: 0, d: 0 },
+            cmds = [],
+            cmdIdx = 0;
 
             d3.select('svg').remove();
             d3.select('body').append('svg');
