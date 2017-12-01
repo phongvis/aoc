@@ -29,6 +29,3 @@ assert ut.cat(decode("ULL RRDDD LURDL UUUUD".split())) == '1985'
 file = open('day02.txt')
 part1 = ut.cat(decode(file))
 print(part1)
-
-# for line in file:
-
