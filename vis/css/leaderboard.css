@@ -1,0 +1,42 @@
+.pv-leaderboard text {
+    font-size: 10px;
+}
+
+.pv-leaderboard .x-label {
+    text-anchor: end;
+    dominant-baseline: text-after-edge;
+}
+
+.pv-leaderboard .x-label div {
+    float: right;
+}
+
+.pv-leaderboard .y-label select {
+    transform-origin: right;
+}
+
+.pv-leaderboard .y-label {
+    text-anchor: end;
+    dominant-baseline: text-before-edge;
+}
+
+.pv-leaderboard .line path {
+    fill: none;
+    stroke: gray;
+}
+
+.pv-leaderboard .line circle {
+    fill: gray;
+}
+
+.pv-leaderboard .line circle:hover {
+    stroke: black;
+}
+
+.pv-leaderboard .line text {
+    dominant-baseline: middle;
+}
+
+.pv-leaderboard path {
+    fill: none;
+}
