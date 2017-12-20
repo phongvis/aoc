@@ -4,29 +4,11 @@ import hashlib
 def md5(s):
     return hashlib.md5(bytes(s, 'utf-8')).hexdigest()
 
-def input(day):
-    filename = '2017/day{}.txt'.format(day if day >= 10 else '0' + str(day))
-    return open(filename)
-
 def transpose(matrix):
     return zip(*matrix)
 
 def cat(it):
     return ''.join(it)
-
-def neighbors4(point):
-    "The four neighboring squares."
-    x, y = point
-    return (          (x, y-1),
-            (x-1, y),           (x+1, y),
-                      (x, y+1))
-
-def neighbors8(point):
-    "The eight neighboring squares."
-    x, y = point
-    return ((x-1, y-1), (x, y-1), (x+1, y-1),
-            (x-1, y),             (x+1, y),
-            (x-1, y+1), (x, y+1), (x+1, y+1))
 
 def always(value): return (lambda *args: value)
 
@@ -51,6 +33,17 @@ def bfs(start, moves_func, goals):
     "Breadth-first search"
     goal_func = (goals if callable(goals) else lambda s: s in goals)
     return Astar(start, moves_func, lambda s: (0 if goal_func(s) else 1))
+
+def neighbors4(point):
+    "The four neighbors (without diagonals)."
+    x, y = point
+    return ((x+1, y), (x-1, y), (x, y+1), (x, y-1))
+
+def neighbors8(point):
+    "The eight neighbors (with diagonals)."
+    x, y = point
+    return ((x+1, y), (x-1, y), (x, y+1), (x, y-1),
+            (x+1, y+1), (x-1, y-1), (x+1, y-1), (x-1, y+1))
 
 # 2-D points implemented using (x, y) tuples
 def X(point): return point[0]

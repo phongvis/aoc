@@ -1,8 +1,9 @@
+'''https://nbviewer.jupyter.org/url/norvig.com/ipython/Advent%20of%20Code.ipynb'''
 import re
 from collections import Counter
 import utils as ut
 
-file = open('day.txt')
+passcode = 'ihgpwlah'
 
 # Part 1
 
